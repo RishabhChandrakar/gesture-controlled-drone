@@ -63,15 +63,11 @@ Designed for **low-latency interaction** and **stable flight behavior**, the sys
 
 The complete architecture consists of two primary ROS2 packages:
 
----
-
 ### Object Tracker Package  
 
 This package handles the vision part and gesture interpretation.
 
 It consists of two main files:
-
----
 
 #### `process_frame`
 
@@ -82,8 +78,6 @@ This module:
 - Performs lightweight real-time gesture recognition using **geometric and joint-angle** relationships without requiring any heavy deep-learning models.
 
 This enables efficient and low-latency gesture understanding on lightweight hardware.
-
----
 
 #### `tracker_node`
 
@@ -113,9 +107,6 @@ This package is responsible for:
 - **Flight management**
 - **Closed-loop human tracking**
 
-
----
-
 #### Flight Controller Architecture
 
 The system implements a **finite-state flight controller** with multiple operational stages:
@@ -128,8 +119,6 @@ The system implements a **finite-state flight controller** with multiple operati
 - **Landing**
 
 This state-machine-based design ensures stable transitions and safer autonomous operation.
-
----
 
 ##### Closed-Loop Tracking and Control
 
@@ -144,8 +133,6 @@ Gesture-based commands are converted into velocity control inputs, including:
 ##### Position Hold
 - Activated automatically when no valid gesture is detected
 - Helps maintain stable hover behavior
-
----
 
 #### Safety Mechanisms
 
