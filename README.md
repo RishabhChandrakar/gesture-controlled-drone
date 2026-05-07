@@ -11,9 +11,9 @@ Please kindly star :star: this project if it helps you. We take great efforts to
 
 * [Quick Start](#1-Quick-Start)
 * [Algorithms and Papers](#2-Algorithms-and-Papers)       <!-- * [Run Simulations](#4-run-simulations) -->
+* [Validation and Testing](#2-Validation-and-Testing)
 * [Use in Your Application](#3-use-in-your-application)
 <!-- * [Known issues](#known-issues) -->
-
 
 ## 1. Quick Start
 
@@ -94,7 +94,7 @@ It publishes:
   ```bash
   /lateral_command
 
-- **Body position offset** (`direction + intensity`)  
+- **Human position offset** (`direction + intensity`)  
   Topic:
   ```bash
   /waist_angle
@@ -120,17 +120,17 @@ The system implements a **finite-state flight controller** with multiple operati
 
 This state-machine-based design ensures stable transitions and safer autonomous operation.
 
-##### Closed-Loop Tracking and Control
+**Closed-Loop Tracking and Control**
 
 The package implements a **PID-based yaw controller** driven by the human position offset, enabling the drone to continuously align itself toward the user.
 
 Gesture-based commands are converted into velocity control inputs, including:
 
-##### Lateral Motion Control
+**Lateral Motion Control**
 - Left/right drone motion
 - Implemented using **body-frame to world-frame transformation**
 
-##### Position Hold
+**Position Hold**
 - Activated automatically when no valid gesture is detected
 - Helps maintain stable hover behavior
 
@@ -146,7 +146,7 @@ These mechanisms prevent unstable drone behavior during perception loss or ambig
 
 ---
 
-## Validation and Testing
+## 3. Validation and Testing
 
 The complete pipeline has been validated in both:
 
@@ -160,11 +160,11 @@ The complete pipeline has been validated in both:
 - **Raspberry Pi 4**
 - **Raspberry Pi Camera**
 
-## 3. Use in Your Application
+## 4. Use in Your Application
 
 
 
-## 4. Parameters
+## 5. Parameters
 
 The ROS implementation exposes several parameters:
 
