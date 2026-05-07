@@ -63,7 +63,7 @@ Designed for **low-latency interaction** and **stable flight behavior**, the sys
 
 The complete architecture consists of two primary ROS2 packages:
 
-### Object Tracker Package  
+### 1. Object Tracker Package  
 
 This package handles the vision part and gesture interpretation.
 
@@ -99,7 +99,7 @@ It publishes:
   ```bash
   /waist_angle
 
-### Human Tracking Controls Package  
+### 2. Human Tracking Controls Package  
 
 This package is responsible for:
 
