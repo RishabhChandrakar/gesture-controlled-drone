@@ -61,41 +61,31 @@ The system combines:
 
 Designed for **low-latency interaction** and **stable flight behavior**, the system runs efficiently on lightweight hardware using a **monocular camera**.
 
-All submodules such as **human pose estimation**, **gesture recognition**, and **closed-loop yaw control** are implemented within the `minco-trajectory-planner`.
-
-The complete architecture is organized into two primary ROS2 packages:
+The complete architecture consists of two primary ROS2 packages:
 
 ---
 
-# Object Tracker Package  
-### *(Perception + Interaction Logic)*
+### Object Tracker Package  
 
-This package handles the complete vision pipeline and gesture interpretation.
+This package handles the vision part and gesture interpretation.
 
 It consists of two main files:
 
 ---
 
-### `process_frame`
+#### `process_frame`
 
 This module:
 
-- Extracts human body landmarks from monocular camera input using **MediaPipe**
-  - Shoulders
-  - Elbows
-  - Wrists
-  - Hips
+- Extracts key human body landmarks from monocular camera input using **MediaPipe** for real-time pose understanding.
 
-- Performs gesture recognition using lightweight geometric relationships:
-  - Joint-angle-based calculations
-  - Real-time inference
-  - No heavy deep-learning models required
+- Performs lightweight real-time gesture recognition using **geometric and joint-angle** relationships without requiring any heavy deep-learning models.
 
 This enables efficient and low-latency gesture understanding on lightweight hardware.
 
 ---
 
-### `tracker_node`
+#### `tracker_node`
 
 This module integrates perception output with a **state-machine-based interaction logic** to ensure:
 
@@ -110,8 +100,12 @@ It publishes:
   ```bash
   /lateral_command
 
-# Human Tracking Controls Package  
-### *(Control + Flight Execution)*
+- **Body position offset** (`direction + intensity`)  
+  Topic:
+  ```bash
+  /waist_angle
+
+### Human Tracking Controls Package  
 
 This package is responsible for:
 
@@ -119,11 +113,10 @@ This package is responsible for:
 - **Flight management**
 - **Closed-loop human tracking**
 
-The complete controller is implemented using **ROS2** and **MAVROS**.
 
 ---
 
-## Flight Controller Architecture
+#### Flight Controller Architecture
 
 The system implements a **finite-state flight controller** with multiple operational stages:
 
@@ -138,27 +131,23 @@ This state-machine-based design ensures stable transitions and safer autonomous 
 
 ---
 
-## Closed-Loop Tracking and Control
+##### Closed-Loop Tracking and Control
 
 The package implements a **PID-based yaw controller** driven by the human position offset, enabling the drone to continuously align itself toward the user.
 
 Gesture-based commands are converted into velocity control inputs, including:
 
-### Lateral Motion Control
+##### Lateral Motion Control
 - Left/right drone motion
 - Implemented using **body-frame to world-frame transformation**
 
-### Altitude Stabilization
-- Maintains stable flight height
-- Implemented using **proportional control**
-
-### Position Hold
+##### Position Hold
 - Activated automatically when no valid gesture is detected
 - Helps maintain stable hover behavior
 
 ---
 
-## Safety Mechanisms
+#### Safety Mechanisms
 
 The controller incorporates multiple safety features to improve flight reliability:
 
@@ -182,20 +171,11 @@ The complete pipeline has been validated in both:
 ### Real Hardware Platform
 - **F450 Quadrotor**
 - **Raspberry Pi 4**
+- **Raspberry Pi Camera**
 
 ## 3. Use in Your Application
 
-<!-- If you have successfully run the simulation and want to use __minco-trajectory-planner__ in your project,
-please explore the files kino_replan.launch or topo_replan.launch.
-Important parameters that may be changed in your usage are contained and documented.
 
-Note that in our configuration, the size of depth image is 640x480. 
-For higher map fusion efficiency we do downsampling (in kino_algorithm.xml, skip_pixel = 2).
-If you use depth images with lower resolution (like 256x144), you might disable the downsampling by setting skip_pixel = 1. Also, the _depth_scaling_factor_ is set to 1000, which may need to be changed according to your device.
-
-Finally, for setup problem, like compilation error caused by different versions of ROS/Eigen, please first refer to existing __issues__, __pull request__, and __Google__ before raising a new issue. Insignificant issue will receive no reply.
-
--->
 
 ## 4. Parameters
 
