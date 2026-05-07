@@ -54,60 +54,61 @@ source install/setup.bash && ros2 launch planner planner_simulation.launch
 
 The system combines:
 
-*Human pose estimation
-*Gesture interpretation
-*State-machine-based control logic
-*Closed-loop yaw control
+- **Human pose estimation**
+- **Gesture interpretation**
+- **State-machine-based control logic**
+- **Closed-loop yaw control**
 
-Designed for low-latency interaction and stable flight behavior, the system runs efficiently on lightweight hardware using a monocular camera.
+Designed for **low-latency interaction** and **stable flight behavior**, the system runs efficiently on lightweight hardware using a **monocular camera**.
 
-All sub modules such as human pose estimation, gesture recognition, closed-loop yaw control are implemented in __minco-trajectory-planner__:
+All submodules such as **human pose estimation**, **gesture recognition**, and **closed-loop yaw control** are implemented within the `minco-trajectory-planner`.
 
-The whole architecture is organized into two primary ROS2 packages:
+The complete architecture is organized into two primary ROS2 packages:
 
+---
 
-Object Tracker Package (Perception + Interaction Logic)
+# Object Tracker Package  
+### *(Perception + Interaction Logic)*
 
-This package handles the complete vision pipeline and gesture interpretation, and it consists of two files :
+This package handles the complete vision pipeline and gesture interpretation.
 
-- __process_frame__
-It extracts key human body landmarks (shoulders, elbows, wrists, hips) from monocular camera input using MediaPipe.
-Gesture recognition is performed using simple geometric relationships (joint angles), enabling lightweight and real-time computation without depending on any heavy learning models.
+It consists of two main files:
 
-- __tracker_node__
-It Integrates perception output with a state-machine-based interaction logic to ensure stable gesture recognition and safe transitions.
+---
+
+### `process_frame`
+
+This module:
+
+- Extracts human body landmarks from monocular camera input using **MediaPipe**
+  - Shoulders
+  - Elbows
+  - Wrists
+  - Hips
+
+- Performs gesture recognition using lightweight geometric relationships:
+  - Joint-angle-based calculations
+  - Real-time inference
+  - No heavy deep-learning models required
+
+This enables efficient and low-latency gesture understanding on lightweight hardware.
+
+---
+
+### `tracker_node`
+
+This module integrates perception output with a **state-machine-based interaction logic** to ensure:
+
+- Stable gesture recognition
+- Safe state transitions
+- Robust interaction behavior
+
 It publishes:
-Lateral motion commands (direction + intensity) in the topic `/lateral_command` 
-Human position offset (waist center) for tracking in the topic `/waist_angle`
 
-This module effectively converts raw visual input into structured control signals.
-
-
-Human Tracking Controls Package (Control + Flight Execution)
-
-This package is responsible for drone control, flight management, and closed-loop tracking, implemented using ROS2 and MAVROS.
-
-Implements a finite-state flight controller with stages such as:
-*Mode switching (GUIDED)
-*Arming
-*Takeoff
-*Hover
-*Active tracking
-*Landing
-
-It implementd a PID controller for yaw alignment, driven by the human position offset, enabling the drone to continuously face the user.
-Converts gesture-based commands into velocity control inputs, including:
-
-Lateral motion (left/right) using body-frame to world-frame transformation
-Altitude stabilization using proportional control
-Position hold when no gesture is active
-
-Incorporates safety mechanisms, such as:
-Vision timeout fallback to hover
-Threshold-based engagement/disengagement of tracking
-
-The full pipeline is validated in simulation (Gazebo–ROS–ArduPilot SITL) as well as on hardware with an F450 quadrotor running on a Raspberry Pi 4.
-
+- **Lateral motion commands** (`direction + intensity`)  
+  Topic:
+  ```bash
+  /lateral_command
 
 
 ## 3. Use in Your Application
