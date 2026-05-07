@@ -1,5 +1,5 @@
 # gesture-controlled-drone
-** Gesture Controlled Drone ** is a a vision based human gesture-controlled drone system with autonomous yaw alignment, designed for intuitive and real-time human–drone interaction. The system allows a user to control drone motion using natural body gestures, while ensuring that the drone continuously orients itself toward the user.
+**Gesture Controlled Drone** is a a vision based human gesture-controlled drone system with autonomous yaw alignment, designed for intuitive and real-time human–drone interaction. The system allows a user to control drone motion using natural body gestures, while ensuring that the drone continuously orients itself toward the user.
 
 
 To run this project in minutes, check [Quick Start](#1-Quick-Start). Check other sections for more detailed information.
@@ -110,6 +110,78 @@ It publishes:
   ```bash
   /lateral_command
 
+# Human Tracking Controls Package  
+### *(Control + Flight Execution)*
+
+This package is responsible for:
+
+- **Drone control**
+- **Flight management**
+- **Closed-loop human tracking**
+
+The complete controller is implemented using **ROS2** and **MAVROS**.
+
+---
+
+## Flight Controller Architecture
+
+The system implements a **finite-state flight controller** with multiple operational stages:
+
+- **Mode Switching** (`GUIDED`)
+- **Arming**
+- **Takeoff**
+- **Hover**
+- **Active Tracking**
+- **Landing**
+
+This state-machine-based design ensures stable transitions and safer autonomous operation.
+
+---
+
+## Closed-Loop Tracking and Control
+
+The package implements a **PID-based yaw controller** driven by the human position offset, enabling the drone to continuously align itself toward the user.
+
+Gesture-based commands are converted into velocity control inputs, including:
+
+### Lateral Motion Control
+- Left/right drone motion
+- Implemented using **body-frame to world-frame transformation**
+
+### Altitude Stabilization
+- Maintains stable flight height
+- Implemented using **proportional control**
+
+### Position Hold
+- Activated automatically when no valid gesture is detected
+- Helps maintain stable hover behavior
+
+---
+
+## Safety Mechanisms
+
+The controller incorporates multiple safety features to improve flight reliability:
+
+- **Vision-timeout fallback to hover**
+- **Threshold-based engagement/disengagement of tracking**
+- Stable control transitions using finite-state logic
+
+These mechanisms prevent unstable drone behavior during perception loss or ambiguous gesture input.
+
+---
+
+## Validation and Testing
+
+The complete pipeline has been validated in both:
+
+### Simulation Environment
+- **Gazebo**
+- **ROS2**
+- **ArduPilot SITL**
+
+### Real Hardware Platform
+- **F450 Quadrotor**
+- **Raspberry Pi 4**
 
 ## 3. Use in Your Application
 
