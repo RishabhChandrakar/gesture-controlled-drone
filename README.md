@@ -101,25 +101,6 @@ The system combines four major components:
 - **State-machine-based interaction logic** for stable gesture transitions.
 - **Closed-loop yaw control** for keeping the drone aligned with the user.
 
-```mermaid
-flowchart LR
-    Camera[Monocular Camera] --> Pose[Human Pose Estimation]
-    Pose --> Gesture[Gesture Interpretation]
-    Gesture --> State[State Machine]
-    State --> Commands[Motion Commands]
-    Pose --> Yaw[Human Offset]
-    Yaw --> Controller[PID Yaw Controller]
-    Commands --> Drone[Quadrotor]
-    Controller --> Drone
-
-    classDef sensing fill:#eef6ff,stroke:#3b82f6,stroke-width:1px,color:#0f172a;
-    classDef logic fill:#f7fee7,stroke:#65a30d,stroke-width:1px,color:#0f172a;
-    classDef control fill:#fff7ed,stroke:#f97316,stroke-width:1px,color:#0f172a;
-    class Camera,Pose sensing;
-    class Gesture,State logic;
-    class Commands,Yaw,Controller,Drone control;
-```
-
 The complete ROS 2 architecture is organized around two primary packages.
 
 ### Object Tracker Package
