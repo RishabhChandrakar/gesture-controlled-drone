@@ -1,123 +1,208 @@
-# gesture-controlled-drone
-**Gesture Controlled Drone** is a a vision based human gesture-controlled drone system with autonomous yaw alignment, designed for intuitive and real-time human–drone interaction. The system allows a user to control drone motion using natural body gestures, while ensuring that the drone continuously orients itself toward the user.
+# Gesture Controlled Drone
 
+**Gesture Controlled Drone** is a vision-based human gesture control system for quadrotors. It enables intuitive real-time human-drone interaction using natural body gestures, while a closed-loop yaw controller keeps the drone oriented toward the user.
 
-To run this project in minutes, check [Quick Start](#1-Quick-Start). Check other sections for more detailed information.
+<p align="center">
+  <img src="media_files/hand_gesture_swar_flowchart.jpeg" width="760" alt="Gesture controlled drone system architecture"/>
+</p>
 
-Please kindly star :star: this project if it helps you. We take great efforts to develope and maintain it :grin::grin:.
+To run the project quickly, start with [Quick Start](#1-quick-start). For the perception, control, and validation details, see the sections below.
 
+If this project helps you, please consider starring the repository.
 
 ## Table of Contents
 
-* [Quick Start](#1-Quick-Start)
-* [Algorithms and Papers](#2-Algorithms-and-Papers)       <!-- * [Run Simulations](#4-run-simulations) -->
-* [Validation and Testing](#2-Validation-and-Testing)
-* [Use in Your Application](#3-use-in-your-application)
-<!-- * [Known issues](#known-issues) -->
+- [1. Quick Start](#1-quick-start)
+- [2. System Architecture](#2-system-architecture)
+- [3. Validation and Testing](#3-validation-and-testing)
+- [4. Use in Your Application](#4-use-in-your-application)
 
 ## 1. Quick Start
 
-This project has been tested on Ubuntu 22.04(ROS Humble) .
+This project has been tested on **Ubuntu 22.04** with **ROS 2 Humble**.
 
-Firstly, you should install the following required libraries:
+Install the required system dependencies:
 
-Eigen3
-Ompl
-Octopmap
-
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+  cmake \
+  build-essential \
+  git \
+  wget \
+  python3-pip \
+  python3-setuptools \
+  python3-numpy \
+  python3-opencv \
+  ros-humble-camera-ros \
+  ros-humble-sensor-msgs \
+  ros-humble-std-msgs \
+  ros-humble-geometry-msgs \
+  ros-humble-mavros-extras
 ```
-  sudo apt-get update && sudo apt-get install -y \
-  libeigen3-dev \
-  ros-humble-octomap-ros \
-  ros-humble-ompl
+
+Install the Python vision/perception dependency:
+
+```bash
+pip3 install mediapipe==0.10.9
 ```
 
-Then simply clone and compile our package (using ssh here):
+The image-processing pipeline uses **OpenCV** through `cv2` and manually converts ROS image messages with NumPy, so `cv_bridge` is not required.
 
+<pre>
+raw_data = np.frombuffer(msg.data, dtype=np.uint8)
+yuv = raw_data.reshape((msg.height + msg.height // 2, msg.step))
+yuv = yuv[:, :msg.width]
+frame = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR_NV21)
+</pre>
+
+Install MAVROS GeographicLib datasets:
+
+```bash
+wget https://raw.githubusercontent.com/mavlink/mavros/ros2/mavros/scripts/install_geographiclib_datasets.sh
+chmod +x install_geographiclib_datasets.sh
+sudo ./install_geographiclib_datasets.sh
+rm install_geographiclib_datasets.sh
 ```
-git clone git@github.com:RishabhChandrakar/minco-trajectory-planner.git
-cd minco-trajectory-planner
+
+Clone and build the workspace:
+
+```bash
+git clone git@github.com:RishabhChandrakar/gesture-controlled-drone.git
+cd gesture-controlled-drone
 colcon build
+source install/setup.bash
 ```
 
-You may check the detailed [instruction](#3-setup-and-config) to setup the project. 
+Run the gesture-control pipeline from separate terminals as required by your setup.
 
-After compilation you can start a simulation (run in a new terminals): 
+Start one of the object tracker nodes:
+
+```bash
+source install/setup.bash
+ros2 run object_tracker tracker_rpi
 ```
-source install/setup.bash && ros2 launch planner planner_simulation.launch
+
+Start the human tracking controller:
+
+```bash
+source install/setup.bash
+ros2 run human_tracking_controls mavros_yaw_body_tracking
 ```
 
-## 2. Architecture
+Other tracker entry points, such as `tracker_soumya` and `tracker_rishabh`, are also available for setup-specific experiments.
 
-The system combines:
+## 2. System Architecture
 
-- **Human pose estimation**
-- **Gesture interpretation**
-- **State-machine-based control logic**
-- **Closed-loop yaw control**
+The system combines four major components:
 
-The complete architecture consists of two primary ROS2 packages:
+- **Human pose estimation** for extracting body landmarks from camera input.
+- **Gesture interpretation** using geometric and joint-angle relationships.
+- **State-machine-based interaction logic** for stable gesture transitions.
+- **Closed-loop yaw control** for keeping the drone aligned with the user.
 
-- **Object Tracker**
-- **Human Tracking Controls**
+```mermaid
+flowchart LR
+    Camera[Monocular Camera] --> Pose[Human Pose Estimation]
+    Pose --> Gesture[Gesture Interpretation]
+    Gesture --> State[State Machine]
+    State --> Commands[Motion Commands]
+    Pose --> Yaw[Human Offset]
+    Yaw --> Controller[PID Yaw Controller]
+    Commands --> Drone[Quadrotor]
+    Controller --> Drone
 
-### 1. Object Tracker Package  
+    classDef sensing fill:#eef6ff,stroke:#3b82f6,stroke-width:1px,color:#0f172a;
+    classDef logic fill:#f7fee7,stroke:#65a30d,stroke-width:1px,color:#0f172a;
+    classDef control fill:#fff7ed,stroke:#f97316,stroke-width:1px,color:#0f172a;
+    class Camera,Pose sensing;
+    class Gesture,State logic;
+    class Commands,Yaw,Controller,Drone control;
+```
 
-This package handles the vision part and gesture recognition.
+The complete ROS 2 architecture is organized around two primary packages.
 
-It consists of two files:
+### Object Tracker Package
 
-**process_frame** - It extracts key human body landmarks from monocular camera input using **MediaPipe** and then recognises the gesture using **geometric and joint-angle** relationships without requiring any heavy deep-learning models.
+The **Object Tracker** package handles the vision pipeline and gesture recognition.
 
-**tracker_node** - It integrates perception output with a **state-machine-based interaction logic** to ensure stable gesture recognition , safe state transitions , robust interaction.
+**`process_frame`**
 
-It publishes:
+Extracts key human body landmarks from monocular camera input using **MediaPipe** and recognizes gestures using geometric and joint-angle relationships.
 
-- **Lateral motion commands** (`direction + intensity`)  
-  Topic: ```bash /lateral_command
-  
-- **Human position offset**   
-  Topic: ```bash /waist_angle
+**`tracker_node`**
 
-### 2. Human Tracking Controls Package  
+Connects perception output with state-machine-based interaction logic for stable gesture recognition, safe transitions, and robust interaction.
 
-This package is responsible for complete flight management, the whole architecture consists of following parts :
+**Primary outputs**
 
-**Closed-Loop Tracking and Control** - It includes a **PID-based yaw controller** driven by the human position offset, enabling the drone to continuously align itself toward the user.
+- `/lateral_command`: lateral motion command with direction and intensity.
+- `/waist_angle`: human position offset used by the yaw controller.
 
-**Lateral Motion Control**
-- Left/right drone motion
-- Implemented using **body-frame to world-frame transformation**
+### Human Tracking Controls Package
 
-**Position Hold**
-- Activated automatically when no valid gesture is detected
-- Helps maintain stable hover behavior
+The **Human Tracking Controls** package manages the flight-control side of the system.
+
+**Closed-loop tracking and control**
+
+Uses a **PID-based yaw controller** driven by the human position offset, allowing the drone to continuously face the user.
+
+**Lateral motion control**
+
+Converts body-frame commands into world-frame motion for left and right drone movement.
+
+**Position hold**
+
+Activates automatically when no valid gesture is detected, helping the drone maintain a stable hover.
 
 ### Safety Mechanisms
 
-To prevent unstable drone behavior during perception loss or ambiguous gesture input , following safety measures have been implemented .
+The control pipeline includes safety handling for perception loss and ambiguous gesture input:
 
-- **Vision-timeout fallback to hover**
-- **Threshold-based engagement/disengagement of tracking**
-- Stable control transitions using finite-state logic
-
----
+- Vision-timeout fallback to hover.
+- Threshold-based engagement and disengagement of tracking.
+- Stable control transitions using finite-state logic.
 
 ## 3. Validation and Testing
 
-The complete pipeline has been validated in both:
+The complete pipeline has been validated in both simulation and real hardware experiments.
 
 ### Simulation Environment
+
+Simulation testing was performed using:
+
 - **Gazebo**
-- **ROS2**
+- **ROS 2**
 - **ArduPilot SITL**
 
+<p align="center">
+  <img src="media_files/hand_gesture_pradyumn_single_drone-ezgif.com-video-to-gif-converter.gif" width="760" alt="Gesture controlled drone simulation demo"/>
+</p>
+
+<p align="center">
+  <img src="media_files/ezgif.com-video-to-gif-converter.gif" width="760" alt="Gesture controlled drone simulation validation"/>
+</p>
+
 ### Real Hardware Platform
-- **F450 Quadrotor**
+
+Hardware testing was performed on:
+
+- **F450 quadrotor**
 - **Raspberry Pi 4**
 - **Raspberry Pi Camera**
 
+<p align="center">
+  <img src="media_files/hand_gesture_soumya_hardware_video-ezgif.com-video-to-gif-converter.gif" width="760" alt="Gesture controlled drone hardware demo one"/>
+</p>
+
+<p align="center">
+  <img src="media_files/hand_gesture_rishabh_hardware_video-ezgif.com-video-to-gif-converter.gif" width="760" alt="Gesture controlled drone hardware demo two"/>
+</p>
+
 ## 4. Use in Your Application
 
+This project can be adapted for other human-drone interaction workflows by reusing the perception and control packages independently:
 
-
+- Use `object_tracker` when you need gesture recognition from monocular camera input.
+- Use `human_tracking_controls` when you need yaw alignment, lateral gesture motion, and hover fallback behavior.
+- Tune gesture thresholds, PID gains, and timeout values according to your drone frame, camera placement, and operating environment.
